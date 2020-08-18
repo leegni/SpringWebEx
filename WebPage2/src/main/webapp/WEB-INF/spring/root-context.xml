@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<!-- Root Context: defines shared resources visible to all other web components -->
+	
+	<context:property-placeholder location="resources/dbConn" />
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource"
+		p:driverClassName="${jdbc.driverClassName}" p:url="${jdbc.url}"
+		p:username="${jdbc.username}" p:password="${jdbc.password}"></bean>
+		
+		
+	<bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean"
+	p:dataSource-ref="dataSource"
+	p:mapperLocations="/WEB-INF/spring/mapper/*.xml"/>
+	
+	<bean id="memberFactoryBean" class="org.mybatis.spring.mapper.MapperFactoryBean"
+	p:mapperInterface="com.care.Membership.IDao"
+	p:sqlSessionFactory-ref="sqlSessionFactoryBean"/>
+	
+		<bean id="boardFactoryBean" class="org.mybatis.spring.mapper.MapperFactoryBean"
+	p:mapperInterface="com.care.Board.BoardDao"
+	p:sqlSessionFactory-ref="sqlSessionFactoryBean"/>
+	
+	<bean class="com.care.WebPage2.LoggerAspect" id="loggerAspect"/>
+	
+</beans>

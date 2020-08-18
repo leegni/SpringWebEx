@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.care.Board.BoardDao">
+	<sql id="conditional">
+		<where>
+			<choose>
+				<when test='searchSelect eq "memId"'>
+					memId like '%'||#{search}||'%'
+				</when>
+				<when test='searchSelect eq "title"'>
+					title like '%'||#{search}||'%'
+				</when>
+				<when test='searchSelect eq "all"'>
+					title like '%'||#{search}||'%' OR memId like '%'||#{search}||'%'
+				</when>
+			</choose>
+		</where>
+	</sql>
+	<select id="getBoard" resultType="com.care.Board.Board"
+		parameterType="Map">
+
+		SELECT * FROM(
+		SELECT LEVEL, num, memId, LPAD(' re: ', 4*(LEVEL-1))||title as title,
+		contents, writeDate, readNo as hits, pNum, depth, ROWNUM AS RNUM
+		FROM(
+		SELECT b.num, memId, title, contents, to_char(writeDate,'yyyy/mm/dd
+		hh24:mi:ss') writeDate,
+		h.readNo, nvl(rpl.pNum, 0) as pNum, nvl(rpl.depth, 0) as depth
+		FROM board b LEFT JOIN Hits h ON b.num = h.num
+		LEFT JOIN reply rpl ON b.num = rpl.num
+		)
+		<include refid="conditional"></include>
+		START WITH pNum=0
+		CONNECT BY PRIOR num=pNum
+		ORDER SIBLINGS BY num desc
+		)
+		WHERE RNUM <![CDATA[>]]>
+		#{start} AND RNUM <![CDATA[<=]]>
+		#{end}
+	</select>
+	<select id="getContents" resultType="com.care.Board.Board"
+		parameterType="int">
+		SELECT * FROM BOARD WHERE NUM=#{num}
+	</select>
+	<select id="countBoard" resultType="int" parameterType="Map">
+		SELECT count(*) FROM BOARD
+		<include refid="conditional"></include>
+	</select>
+	<delete id="deleteBoard" parameterType="String">
+		DELETE FROM BOARD WHERE NUM IN
+		<foreach item="num" collection="array" open="(" separator="," close=")">
+		#{num}
+		</foreach>
+	</delete>
+	<insert id="writeProc" parameterType="com.care.Board.Board">
+	 	INSERT INTO BOARD (num, memId, title, contents, writeDate)
+	 	VALUES ((SELECT NVL(max(num), 0)+1 FROM Board), #{memId}, 
+	 			#{title}, #{contents}, sysdate)
+	</insert>
+</mapper>
